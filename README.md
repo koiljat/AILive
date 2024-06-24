@@ -32,3 +32,6 @@ The LLM chat assistant can automatically respond to viewer questions and comment
 **Viewer Question:** "Is the shirt available in black?"
 
 **LLM Agent Response:** "Yes, there are 3 colors available: black, white, and blue."
+
+![image](https://github.com/koiljat/tiktok-hack-2024/assets/124496128/f517f275-c8bf-4522-b237-24a188058535)
+
