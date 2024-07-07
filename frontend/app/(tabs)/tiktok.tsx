@@ -1,48 +1,83 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   TouchableOpacity,
   View,
-  SafeAreaView,
   Text,
-  Image
+  ImageBackground
 } from 'react-native';
 
-export default function Tiktok() {
+export default function Home() {
   const [buttonColor, setButtonColor] = useState('rgba(255, 105, 100, 0.8)');
   const [showText, setShowText] = useState(false);
+  const [summary, setSummary] = useState('');
+  const [sentimentColor, setSentimentColor] = useState('green'); 
 
   const toggleTextVisibility = () => {
     setShowText(!showText);
     setButtonColor(showText ? 'rgba(255, 105, 100, 0.8)' : 'rgba(147, 58, 55, 0.8)');
   };
 
+  const updateSentimentColor = (sentimentSummary: string) => {
+    if (sentimentSummary.includes('NEGATIVE')) {
+      setSentimentColor('red');
+    } else {
+      setSentimentColor('green');
+    }
+  };
+
+  const fetchSummary = () => {
+    fetch('http://localhost:5001/summary')  
+      .then(response => response.json())
+      .then(data => {
+        setSummary(data.summary);
+        updateSentimentColor(data.aspect_sentiment_summary);
+      })
+      .catch(error => {
+        console.error('Error fetching summary:', error);
+      });
+  };
+  
+  useEffect(() => {
+    fetchSummary();
+
+    // Fetch summary every minute
+    const interval = setInterval(() => {
+      fetchSummary();
+    }, 60000); 
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: buttonColor }]}
-          onPress={toggleTextVisibility}
-        >
-          <Text style={styles.buttonText}>Generate</Text>
-        </TouchableOpacity>
-        {showText && (
-          <View style={styles.hiddenTextContainer}>
-            <Text style={styles.hiddenText}>In the heart of the bustling city, amid the cacophony of honking horns and hurried footsteps, stood a quaint little bookstore with weathered wooden shelves that stretched from floor to ceiling, each shelf laden with a myriad of books in various stages of use. The air inside was thick with the comforting scent of aged paper and ink, mingling with the faint aroma of freshly brewed coffee from a small corner café tucked at the back. The bookstore's windows, adorned with faded lace curtains that swayed gently in the breeze, offered a glimpse into a world frozen in time. Passersby, enticed by the charm of its vintage facade, often found themselves drawn to its threshold, curious to explore its treasures. Inside, soft jazz music played softly from a hidden corner, where a vintage record player spun melodies of forgotten years. The walls, painted a warm, inviting shade of ochre, were lined with literary treasures both ancient and modern, their spines forming a mosaic of genres and authors. Each book whispered stories of love, adventure, and mystery, their pages worn smooth by the hands of countless readers who had journeyed through their pages.</Text>
-          </View>
-        )}
-      </View>
-      <View style={styles.imageContainer}>
-        <Image source={require('@/assets/images/tiktok-live.jpeg')} style={styles.image} />
-      </View>
-    </SafeAreaView>
+    <View style={styles.container}>
+      <ImageBackground source={require('@/assets/images/tiktok-live.jpeg')} style={styles.image}>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: buttonColor }]}
+            onPress={toggleTextVisibility}
+          >
+            <Text style={styles.buttonText}>Generate</Text>
+          </TouchableOpacity>
+          {showText && (
+            <View style={styles.hiddenTextContainer}>
+              <Text style={styles.hiddenText}>{summary}</Text>
+            </View>
+          )}
+        </View>
+        <View style={[styles.sentimentBubble, { backgroundColor: sentimentColor }]} />
+      </ImageBackground>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'flex-start',
+  },
+  image: {
+    flex: 1,
+    justifyContent: 'center',
   },
   buttonContainer: {
     position: 'absolute',
@@ -74,14 +109,20 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 5,
   },
-  imageContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  sentimentBubble: {
+    position: 'absolute',
+    zIndex: 1,
+    top: '10%',
+    left: '15%',
+    right: 0,
     alignItems: 'center',
-  },
-  image: {
-    width: '100%',
-    height: 900,
-    resizeMode: 'cover',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginLeft: 10,
+    borderWidth: 1,
+    borderColor: 'black',
   },
 });
