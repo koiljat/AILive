@@ -99,6 +99,11 @@ def get_summary():
             "summary": summary_text,
             "aspect_sentiment_summary": aspect_sentiment_summary
         })
+        
+@app.route('/getChat', methods=['GET'])
+def get_chat():
+    with lock:
+        return jsonify(global_data)
 
 def start_background_tasks():
     thread_one = threading.Thread(target=emit_data)
