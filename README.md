@@ -1,4 +1,5 @@
 # AILive
+
 A TikTok TechJam 2024 Project
 
 ## Background
@@ -84,6 +85,15 @@ Our project utilizes the following technologies:
    ```
 
 5. Run the application (instructions to be added).
+
+## Ollama Installation
+
+Install Ollama from https://ollama.com/download for your respective OS, then run:
+
+```
+ollama run llama3
+ollama pull nomic-embed-text
+```
 
 ## Setup and Running the Application
 
