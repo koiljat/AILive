@@ -6,6 +6,7 @@ import pandas as pd
 import spacy
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
 from summary import summarizer  # Import your summarizer
+import torch
 
 app = Flask(__name__)
 
@@ -107,4 +108,4 @@ def start_background_tasks():
 
 if __name__ == '__main__':
     start_background_tasks()
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5001)
