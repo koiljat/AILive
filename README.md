@@ -95,6 +95,4 @@ ollama run llama3
 ollama pull nomic-embed-text
 ```
 
-## Setup and Running the Application
 
-(Add instructions for setting up and running both the frontend React Native app and the backend Python server here.)
