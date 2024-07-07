@@ -51,6 +51,12 @@ Our project utilizes the following technologies:
 - **LangChain**: A framework for developing applications powered by language models.
 - **Ollama**: Provides state-of-the-art models and tools for our Generative AI development.
 
+**A more detailed dependencies such as libraires for the frontend and backend are documented in their respective folders.
+
+### Data and Assets
+- The datasets are synthetic dataset curated to meet this project's need.
+- All other assets are stock images that be found publicly.
+
 ## Installation
 
 1. Clone the repository:
