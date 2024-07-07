@@ -32,16 +32,17 @@ sa = pipeline("sentiment-analysis", model=sa_model, tokenizer=sa_tokenizer, devi
 def csv_data_stream(dataframe, interval=1):
     for _, row in dataframe.iterrows():
         yield row.to_dict()
-        sleep_duration = random.uniform(0.1, interval)
+        sleep_duration = random.uniform(1.0, interval)
         time.sleep(sleep_duration)
 
 # Load your CSV data
-df = pd.read_csv('./data/topical_chat.csv')
+# df = pd.read_csv('../data/topical_chat.csv')
+df = pd.read_csv('../data/test3.csv')
 
 def emit_data():
     global global_data
     for data in csv_data_stream(df):
-        print(f"{data['message']}")
+        # print(f"{data['message']}")
         with lock:
             global_data.append(data)
 
@@ -103,7 +104,9 @@ def get_summary():
 @app.route('/getChat', methods=['GET'])
 def get_chat():
     with lock:
-        return jsonify(global_data)
+        return jsonify({
+            "chat": global_data
+        })
 
 def start_background_tasks():
     thread_one = threading.Thread(target=emit_data)

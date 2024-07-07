@@ -1,4 +1,5 @@
 # AILive
+
 A TikTok TechJam 2024 Project
 
 ## Background
@@ -48,14 +49,20 @@ Our project utilizes the following technologies:
 ### Backend
 - **Python**: The primary language for backend development.
 - **LangChain**: A framework for developing applications powered by language models.
-- **Hugging Face**: Provides state-of-the-art NLP models and tools for our Generative AI development.
+- **Ollama**: Provides state-of-the-art models and tools for our Generative AI development.
+
+**A more detailed dependencies such as libraires for the frontend and backend are documented in their respective folders.
+
+### Data and Assets
+- The datasets are synthetic dataset curated to meet this project's need.
+- All other assets are stock images that be found publicly.
 
 ## Installation
 
 1. Clone the repository:
    ```
-   git clone https://github.com/koiljat/tiktok-hack-2024.git
-   cd tiktok-hack-2024
+   git clone https://github.com/koiljat/AILive.git
+   cd AILive
    ```
 
 2. Create a virtual environment:
@@ -83,8 +90,28 @@ Our project utilizes the following technologies:
    pip install -r requirements.txt
    ```
 
-5. Run the application (instructions to be added).
+5. Run the backend 
+    ```
+    cd src
+    python3 main.py
+    ```
+6. Ensure `npm` is installed. If not, install it from [npmjs.com](https://www.npmjs.com/get-npm).
 
-## Setup and Running the Application
+7. Install dependencies for the frontend (React Native):
+    ```
+    cd frontend
+    npm ci
+     ```
 
-(Add instructions for setting up and running both the frontend React Native app and the backend Python server here.)
+8. Run the application on iOS simulator using Xcode: `npm run ios`
+
+
+## Ollama Installation
+
+Install Ollama from https://ollama.com/download for your respective OS, then run:
+
+```
+ollama run llama3
+ollama pull nomic-embed-text
+```
+
