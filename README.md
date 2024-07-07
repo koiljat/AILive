@@ -49,7 +49,7 @@ Our project utilizes the following technologies:
 ### Backend
 - **Python**: The primary language for backend development.
 - **LangChain**: A framework for developing applications powered by language models.
-- **Hugging Face**: Provides state-of-the-art NLP models and tools for our Generative AI development.
+- **Ollama**: Provides state-of-the-art models and tools for our Generative AI development.
 
 ## Installation
 
