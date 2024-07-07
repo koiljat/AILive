@@ -5,8 +5,11 @@ import random
 import pandas as pd
 import spacy
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
-from summary import summarizer  # Import your summarizer
+from summary import summarizer
 import torch
+from auto_reply import auto_reply
+import signal
+import sys
 
 app = Flask(__name__)
 
@@ -18,6 +21,9 @@ aspect_sentiment_summary = ""
 
 # Lock for synchronizing access to the global variables
 lock = threading.Lock()
+
+# Event to signal threads to stop
+stop_event = threading.Event()
 
 # Load NLP models
 nlp = spacy.load("en_core_web_sm")
@@ -31,6 +37,8 @@ sa = pipeline("sentiment-analysis", model=sa_model, tokenizer=sa_tokenizer, devi
 # Dummy function to simulate emitting data from a CSV data stream
 def csv_data_stream(dataframe, interval=1):
     for _, row in dataframe.iterrows():
+        if stop_event.is_set():
+            break
         yield row.to_dict()
         sleep_duration = random.uniform(0.1, interval)
         time.sleep(sleep_duration)
@@ -41,6 +49,8 @@ df = pd.read_csv('./data/topical_chat.csv')
 def emit_data():
     global global_data
     for data in csv_data_stream(df):
+        if stop_event.is_set():
+            break
         print(f"{data['message']}")
         with lock:
             global_data.append(data)
@@ -72,7 +82,7 @@ def sum_data():
     global global_data, summary_text, data_copy, aspect_sentiment_summary
     
     start_time = time.time()
-    while True:
+    while not stop_event.is_set():
         time.sleep(1)  # Check every second to avoid busy-waiting
         with lock:
             if time.time() - start_time >= 5 and global_data:
@@ -87,10 +97,24 @@ def sum_data():
             aspect_sentiment_summary = format_aspects_sentiments(aspects, sentiments, adjectives)
             with lock:
                 summary_text = summary  # Update the global summary_text
-            print(f"\n[Summary]\n{summary}\n")
-            print(f"\n[Aspect-Sentiment Summary]\n{aspect_sentiment_summary}\n")
             data_copy = []
             start_time = time.time()
+
+def reply():
+    global global_data
+    last_processed_index = -1
+    while not stop_event.is_set():
+        time.sleep(0.1)  # Check every 0.1 seconds to avoid busy-waiting
+        with lock:
+            if global_data and last_processed_index < len(global_data) - 1:
+                for i in range(last_processed_index + 1, len(global_data)):
+                    data = global_data[i]
+                    message = data['message']
+                    reply = auto_reply.get_auto_response(message)
+                    if reply:
+                        print(f"Bot: {reply}")
+                        global_data.append({"message": reply, "is_bot": True})
+                last_processed_index = len(global_data) - 1
 
 @app.route('/summary', methods=['GET'])
 def get_summary():
@@ -105,12 +129,31 @@ def get_chat():
     with lock:
         return jsonify(global_data)
 
+def signal_handler(signum, frame):
+    print("Received shutdown signal. Stopping threads...")
+    stop_event.set()
+
 def start_background_tasks():
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
     thread_one = threading.Thread(target=emit_data)
     thread_two = threading.Thread(target=sum_data)
+    thread_three = threading.Thread(target=reply)
+    
     thread_one.start()
     thread_two.start()
+    thread_three.start()
+
+    return [thread_one, thread_two, thread_three]
 
 if __name__ == '__main__':
-    start_background_tasks()
-    app.run(host='0.0.0.0', port=5001)
+    threads = start_background_tasks()
+    try:
+        app.run(host='0.0.0.0', port=5001)
+    finally:
+        print("Shutting down...")
+        stop_event.set()
+        for thread in threads:
+            thread.join()
+        print("All threads stopped. Exiting.")
