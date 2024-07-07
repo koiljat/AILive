@@ -3,6 +3,8 @@ import threading
 import time
 import random
 import pandas as pd
+import spacy
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
 from summary import summarizer  # Import your summarizer
 
 app = Flask(__name__)
@@ -11,9 +13,19 @@ app = Flask(__name__)
 global_data = []
 summary_text = ""
 data_copy = []
+aspect_sentiment_summary = ""
 
 # Lock for synchronizing access to the global variables
 lock = threading.Lock()
+
+# Load NLP models
+nlp = spacy.load("en_core_web_sm")
+
+sa_model_name = "distilbert-base-uncased-finetuned-sst-2-english"
+sa_tokenizer = AutoTokenizer.from_pretrained(sa_model_name)
+sa_model = AutoModelForSequenceClassification.from_pretrained(sa_model_name)
+device = "cuda" if torch.cuda.is_available() else "cpu"
+sa = pipeline("sentiment-analysis", model=sa_model, tokenizer=sa_tokenizer, device=device)
 
 # Dummy function to simulate emitting data from a CSV data stream
 def csv_data_stream(dataframe, interval=1):
@@ -32,8 +44,31 @@ def emit_data():
         with lock:
             global_data.append(data)
 
+def extract_aspects_and_adjectives(text):
+    doc = nlp(text)
+    aspects = []
+    adjectives = []
+    for chunk in doc.noun_chunks:
+        if chunk.root.pos_ == "PRON":
+            continue
+        aspect = chunk.root.text
+        adjective = [child.text for child in chunk.root.children if child.dep_ == "amod"]
+        aspects.append(aspect)
+        adjectives.append(adjective[0] if adjective else "")
+    return aspects, adjectives
+
+def analyze_sentiment(aspects):
+    results = [sa(aspect)[0] for aspect in aspects]
+    return results
+
+def format_aspects_sentiments(aspects, sentiments, adjectives):
+    formatted_results = []
+    for aspect, sentiment, adjective in zip(aspects, sentiments, adjectives):
+        formatted_results.append(f"Aspect: {aspect}, Sentiment: {sentiment['label']}, Adjective: {adjective}")
+    return "\n".join(formatted_results)
+
 def sum_data():
-    global global_data, summary_text, data_copy
+    global global_data, summary_text, data_copy, aspect_sentiment_summary
     
     start_time = time.time()
     while True:
@@ -45,16 +80,24 @@ def sum_data():
         if data_copy:
             text = " ".join([d['message'] for d in data_copy])
             summary = summarizer.invoke(text)
+            aspects, adjectives = extract_aspects_and_adjectives(summary)
+            sentiments = analyze_sentiment(aspects)
+
+            aspect_sentiment_summary = format_aspects_sentiments(aspects, sentiments, adjectives)
             with lock:
                 summary_text = summary  # Update the global summary_text
             print(f"\n[Summary]\n{summary}\n")
+            print(f"\n[Aspect-Sentiment Summary]\n{aspect_sentiment_summary}\n")
             data_copy = []
             start_time = time.time()
 
 @app.route('/summary', methods=['GET'])
 def get_summary():
     with lock:
-        return jsonify({"summary": summary_text})
+        return jsonify({
+            "summary": summary_text,
+            "aspect_sentiment_summary": aspect_sentiment_summary
+        })
 
 def start_background_tasks():
     thread_one = threading.Thread(target=emit_data)
